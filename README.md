@@ -13,6 +13,53 @@ This repository demonstrates Kong Gateway in **DB-less mode** with **Kong Konnec
 
 Perfect for demonstrating both Kong's native AI capabilities AND the flexibility for custom integrations.
 
+## 📑 Table of Contents
+
+- [🎯 Project Overview](#-project-overview)
+- [🏗️ Architecture](#️-architecture)
+- [✨ Key Features](#-key-features)
+  - [1. 🤖 Hybrid AI Gateway Architecture](#1--hybrid-ai-gateway-architecture)
+  - [2. 🔐 API Security & Management](#2--api-security--management)
+  - [3. ☸️ Kubernetes Deployment](#3-️-kubernetes-deployment)
+  - [4. 🎛️ Kong Konnect (Control Plane)](#4-️-kong-konnect-control-plane)
+  - [5. 🚀 Demo Ready Setup](#5--demo-ready-setup)
+- [📁 Repository Structure](#-repository-structure)
+- [🚀 Quick Start](#-quick-start)
+  - [🎬 Automated Step-by-Step Setup](#-automated-step-by-step-setup-recommended)
+  - [Prerequisites](#prerequisites)
+  - [System Check](#system-check)
+- [📖 Step-by-Step Deployment](#-step-by-step-deployment)
+  - [Step 1: Clone Repository](#step-1-clone-repository)
+  - [Step 2: Deploy Demo API to Kubernetes](#step-2-deploy-demo-api-to-kubernetes)
+  - [Step 3: Deploy AI Router to Kubernetes](#step-3-deploy-ai-router-to-kubernetes)
+  - [Step 4: Setup Kong Gateway with Konnect](#step-4-setup-kong-gateway-with-konnect)
+  - [Step 5: Configure Routes in Konnect](#step-5-configure-routes-in-konnect)
+  - [Step 6: Add Authentication & Rate Limiting](#step-6-add-authentication--rate-limiting)
+- [🧪 Testing & Demo Scenarios](#-testing--demo-scenarios)
+  - [Test Demo API Through Kong](#test-demo-api-through-kong)
+  - [Test Hybrid AI Gateway](#test-hybrid-ai-gateway)
+  - [Test Rate Limiting](#test-rate-limiting)
+  - [Test Authentication](#test-authentication)
+- [📊 Monitoring & Analytics](#-monitoring--analytics)
+  - [View Analytics in Kong Konnect](#view-analytics-in-kong-konnect)
+  - [Check Kubernetes Resources](#check-kubernetes-resources)
+  - [Kong Data Plane Status](#kong-data-plane-status)
+- [🎯 What Makes This Demo Unique](#-what-makes-this-demo-unique)
+  - [🔀 Hybrid AI Gateway Architecture](#-hybrid-ai-gateway-architecture)
+  - [🎭 DB-less Architecture Benefits](#-db-less-architecture-benefits)
+  - [🤖 Real AI Integration](#-real-ai-integration)
+  - [☸️ Kubernetes Native](#️-kubernetes-native)
+  - [🏢 Enterprise Features](#-enterprise-features)
+  - [🔌 Progressive Plugin Configuration](#-progressive-plugin-configuration)
+- [🔧 Troubleshooting](#-troubleshooting)
+- [🧹 Clean Up](#-clean-up)
+- [📚 Additional Resources](#-additional-resources)
+- [🎯 Key Takeaways](#-key-takeaways)
+- [📊 Quick Reference](#-quick-reference)
+- [📝 License](#-license)
+- [🤝 Contributing](#-contributing)
+- [📧 Contact](#-contact)
+
 ## 🏗️ Architecture
 
 ```
@@ -595,17 +642,6 @@ curl http://localhost:8001/status
 - **Side-by-Side Comparison**: Both approaches working simultaneously
 - **Real-World Scenarios**: Learn when to use each approach
 
-### 📊 Comparison at a Glance
-
-| Feature | Kong Native AI | Custom AI Router |
-|---------|----------------|------------------|
-| **Setup** | ✅ Simple (plugin config) | ⚠️ Moderate (microservice) |
-| **Maintenance** | ✅ Kong handles updates | ❌ You maintain code |
-| **AI Features** | ✅ Built-in (prompt guard, etc.) | ❌ Build yourself |
-| **Flexibility** | ⚠️ Limited to plugin config | ✅ Full control |
-| **Performance** | ✅ Native C/Lua | ⚠️ Python overhead |
-| **Best For** | Standard AI proxy needs | Custom logic & transformations |
-
 ### 🎭 DB-less Architecture Benefits
 - **No Database Required**: Kong runs in DB-less mode (no PostgreSQL/Cassandra)
 - **Configuration via Konnect**: All config managed through cloud UI or decK CLI
@@ -879,17 +915,17 @@ rm -f 01-kong-basic.yaml 02-kong-with-auth.yaml 03-kong-with-ai-proxy.yaml 04-ko
 
 ## 🎯 Key Takeaways
 
-✅ **Hybrid AI Architecture**: Kong Native AI Gateway + Custom AI Router side-by-side
-✅ **DB-less Mode**: Kong Gateway without database dependencies
-✅ **Cloud Control Plane**: Configuration managed via Kong Konnect (India region)
-✅ **Kubernetes Native**: Containerized services with high availability (2 replicas each)
-✅ **Real AI Integration**: Ollama (local Mistral) + Google Gemini (cloud)
-✅ **Progressive Setup**: 4-stage configuration evolution (basic → auth → AI → security)
-✅ **Enterprise Security**: API keys, rate limiting (10/50 req/min), AI prompt guard
-✅ **Production Ready**: Complete security stack, request tracking, size limits
-✅ **GitOps Ready**: All configurations version-controlled in `/plugins`
-✅ **Automated Workflow**: 10-step scripts + comprehensive cleanup
-✅ **Observability**: Analytics, monitoring, correlation IDs, custom headers
+- ✅ **Hybrid AI Architecture**: Kong Native AI Gateway + Custom AI Router side-by-side
+- ✅ **DB-less Mode**: Kong Gateway without database dependencies
+- ✅ **Cloud Control Plane**: Configuration managed via Kong Konnect (India region)
+- ✅ **Kubernetes Native**: Containerized services with high availability (2 replicas each)
+- ✅ **Real AI Integration**: Ollama (local Mistral) + Google Gemini (cloud)
+- ✅ **Progressive Setup**: 4-stage configuration evolution (basic → auth → AI → security)
+- ✅ **Enterprise Security**: API keys, rate limiting (10/50 req/min), AI prompt guard
+- ✅ **Production Ready**: Complete security stack, request tracking, size limits
+- ✅ **GitOps Ready**: All configurations version-controlled in `/plugins`
+- ✅ **Automated Workflow**: 10-step scripts + comprehensive cleanup
+- ✅ **Observability**: Analytics, monitoring, correlation IDs, custom headers
 
 ## 📊 Quick Reference
 
