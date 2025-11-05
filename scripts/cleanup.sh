@@ -36,6 +36,14 @@ print_warning() {
 
 cd "$(dirname "$0")/.." || exit 1
 
+# Load environment variables
+if [ -f .env ]; then
+    export $(cat .env | grep -v '^#' | xargs)
+    echo -e "${GREEN}✅ Environment loaded from .env${NC}\n"
+else
+    echo -e "${YELLOW}⚠️  .env file not found. Some cleanup operations may be skipped.${NC}\n"
+fi
+
 print_header "🧹 CLEAN UP EVERYTHING - RESET TO FRESH START"
 
 print_warning
@@ -56,17 +64,15 @@ echo -e "\n${MAGENTA}Starting cleanup process...${NC}\n"
 
 print_header "1. CLEANING KONG KONNECT (CONTROL PLANE)"
 
-echo -e "${YELLOW}Enter your Kong Konnect token (or press Enter to skip Kong cleanup):${NC}"
-read -r KONG_TOKEN
+# Use token from .env if available
+KONG_TOKEN="${DECK_KONNECT_TOKEN:-}"
 
 if [ -n "$KONG_TOKEN" ]; then
-    echo -e "${BLUE}Cleaning Kong configuration...${NC}"
+    echo -e "${BLUE}Cleaning Kong configuration using token from .env...${NC}"
 
     # Create empty configuration
     cat > /tmp/kong-empty.yaml << 'EOF'
 _format_version: "3.0"
-_konnect:
-  control_plane_name: Kong-Demo
 
 services: []
 consumers: []
@@ -75,15 +81,15 @@ EOF
 
     echo -e "${CYAN}Applying empty configuration to remove all resources...${NC}"
     deck gateway sync \
-        --konnect-control-plane-name='Kong-Demo' \
-        --konnect-addr='https://in.api.konghq.com' \
+        --konnect-control-plane-name="${DECK_KONNECT_CONTROL_PLANE_NAME:-Kong-Demo}" \
+        --konnect-addr="${KONNECT_CONTROL_PLANE_URL:-https://in.api.konghq.com}" \
         --konnect-token="$KONG_TOKEN" \
         /tmp/kong-empty.yaml || echo -e "${YELLOW}Warning: Could not clean Kong config (might not exist)${NC}"
 
     rm -f /tmp/kong-empty.yaml
     echo -e "${GREEN}✅ Kong Konnect cleaned${NC}"
 else
-    echo -e "${YELLOW}⏭️  Skipping Kong Konnect cleanup${NC}"
+    echo -e "${YELLOW}⏭️  Skipping Kong Konnect cleanup (no token found in .env)${NC}"
 fi
 
 # ==============================================================================
@@ -144,9 +150,13 @@ if [ -d "plugins" ]; then
     rm -f plugins/02-kong-with-auth.yaml
     rm -f plugins/03-kong-with-ai-proxy.yaml
     rm -f plugins/04-kong-complete.yaml
+    rm -f plugins/05-kong-with-semantic-cache.yaml
+    rm -f plugins/06-kong-with-ollama-fixed.yaml
+    rm -f plugins/07-kong-with-redis-plugins.yaml
+    rm -f plugins/08-kong-with-semantic-guard.yaml
 
     # Keep documentation files
-    echo -e "${CYAN}Keeping documentation files (README.md, plugin_evolution.md)${NC}"
+    echo -e "${CYAN}Keeping documentation files (README.md)${NC}"
 
     echo -e "${GREEN}✅ Generated plugin files removed${NC}"
 else

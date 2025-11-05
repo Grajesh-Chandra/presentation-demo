@@ -6,6 +6,17 @@
 # Tests Key Authentication and Rate Limiting on Demo API and AI Router
 # ==============================================================================
 
+# Load environment variables
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
+
+if [ -f "$PROJECT_ROOT/.env" ]; then
+    source "$PROJECT_ROOT/.env"
+    echo "✅ Environment loaded from .env"
+else
+    echo "⚠️  Warning: .env file not found, using defaults"
+fi
+
 # Colors
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
@@ -13,6 +24,11 @@ BLUE='\033[0;34m'
 CYAN='\033[0;36m'
 RED='\033[0;31m'
 NC='\033[0m'
+
+# Configuration (with defaults if not in .env)
+KONG_PROXY_URL=${KONNECT_PROXY_URL:-http://localhost:8000}
+DEMO_API_KEY=${DEMO_API_KEY:-demo-api-key-12345}
+POWER_API_KEY=${POWER_API_KEY:-power-key-67890}
 
 print_header() {
     echo -e "\n${CYAN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
@@ -32,33 +48,33 @@ print_header "STEP 06: TEST AUTHENTICATION & RATE LIMITING"
 # Test 1: No API Key (Should Fail)
 print_header "AUTHENTICATION TESTS"
 
-print_test "1. Demo API without API key (should fail)" "http://localhost:8000/api/demo/api/v1/users"
-curl -s http://localhost:8000/api/demo/api/v1/users | jq '.'
+print_test "1. Demo API without API key (should fail)" "$KONG_PROXY_URL/api/demo/api/v1/users"
+curl -s $KONG_PROXY_URL/api/demo/api/v1/users | jq '.'
 
-print_test "2. AI Router without API key (should fail)" "http://localhost:8000/ai/models"
-curl -s http://localhost:8000/ai/models | jq '.'
+print_test "2. AI Router without API key (should fail)" "$KONG_PROXY_URL/ai/models"
+curl -s $KONG_PROXY_URL/ai/models | jq '.'
 
 # Test 2: With Valid API Key (Should Succeed)
-print_test "3. Demo API with valid API key (demo-user)" "http://localhost:8000/api/demo/api/v1/users"
-curl -s -H "apikey: demo-api-key-12345" http://localhost:8000/api/demo/api/v1/users | jq '.'
+print_test "3. Demo API with valid API key (demo-user)" "$KONG_PROXY_URL/api/demo/api/v1/users"
+curl -s -H "apikey: $DEMO_API_KEY" $KONG_PROXY_URL/api/demo/api/v1/users | jq '.'
 
-print_test "4. AI Router with valid API key (demo-user)" "http://localhost:8000/ai/models"
-curl -s -H "apikey: demo-api-key-12345" http://localhost:8000/ai/models | jq '.'
+print_test "4. AI Router with valid API key (demo-user)" "$KONG_PROXY_URL/ai/models"
+curl -s -H "apikey: $DEMO_API_KEY" $KONG_PROXY_URL/ai/models | jq '.'
 
 # Test 3: With Premium API Key
-print_test "5. Demo API with premium API key (power-user)" "http://localhost:8000/api/demo/api/v1/users"
-curl -s -H "apikey: power-key-67890" http://localhost:8000/api/demo/api/v1/users | jq '.'
+print_test "5. Demo API with premium API key (power-user)" "$KONG_PROXY_URL/api/demo/api/v1/users"
+curl -s -H "apikey: $POWER_API_KEY" $KONG_PROXY_URL/api/demo/api/v1/users | jq '.'
 
 # Test 4: Rate Limiting
 print_header "RATE LIMITING TESTS"
 
-print_test "6. Testing rate limits (demo-user: 10 requests/min)" "http://localhost:8000/api/demo/api/v1/stats"
+print_test "6. Testing rate limits (demo-user: 10 requests/min)" "$KONG_PROXY_URL/api/demo/api/v1/stats"
 echo -e "${BLUE}Making 12 rapid requests...${NC}"
 for i in {1..12}; do
     echo -e "\nRequest $i:"
     RESPONSE=$(curl -s -w "\nHTTP Code: %{http_code}\n" \
-      -H "apikey: demo-api-key-12345" \
-      http://localhost:8000/api/demo/api/v1/stats)
+      -H "apikey: $DEMO_API_KEY" \
+      $KONG_PROXY_URL/api/demo/api/v1/stats)
     echo "$RESPONSE" | grep -E "HTTP Code|totalUsers|message"
 
     if [ $i -eq 11 ]; then
@@ -67,17 +83,17 @@ for i in {1..12}; do
 done
 
 # Test 5: Check Rate Limit Headers
-print_test "7. Check rate limit headers" "http://localhost:8000/api/demo/api/v1/users"
-curl -v -H "apikey: demo-api-key-12345" \
-  http://localhost:8000/api/demo/api/v1/users 2>&1 | grep -i "x-ratelimit"
+print_test "7. Check rate limit headers" "$KONG_PROXY_URL/api/demo/api/v1/users"
+curl -v -H "apikey: $DEMO_API_KEY" \
+  $KONG_PROXY_URL/api/demo/api/v1/users 2>&1 | grep -i "x-ratelimit"
 
 # Test 6: Different Consumer Rate Limits
-print_test "8. Test power-user higher rate limit (50/min)" "http://localhost:8000/api/demo/api/v1/users"
+print_test "8. Test power-user higher rate limit (50/min)" "$KONG_PROXY_URL/api/demo/api/v1/users"
 echo -e "${BLUE}power-user should have higher limits...${NC}"
 for i in {1..5}; do
     echo -n "Request $i: "
-    curl -s -H "apikey: power-key-67890" \
-      http://localhost:8000/api/demo/api/v1/users \
+    curl -s -H "apikey: $POWER_API_KEY" \
+      $KONG_PROXY_URL/api/demo/api/v1/users \
       | jq -r '.success'
 done
 

@@ -6,6 +6,17 @@
 # Tests AI Prompt Guard, Response Headers, and Security Features
 # ==============================================================================
 
+# Load environment variables
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
+
+if [ -f "$PROJECT_ROOT/.env" ]; then
+    source "$PROJECT_ROOT/.env"
+    echo "✅ Environment loaded from .env"
+else
+    echo "⚠️  Warning: .env file not found, using defaults"
+fi
+
 # Colors
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
@@ -14,6 +25,10 @@ CYAN='\033[0;36m'
 MAGENTA='\033[0;35m'
 RED='\033[0;31m'
 NC='\033[0m'
+
+# Configuration (with defaults if not in .env)
+KONG_PROXY_URL=${KONNECT_PROXY_URL:-$KONG_PROXY_URL}
+DEMO_API_KEY=${DEMO_API_KEY:-demo-api-key-12345}
 
 print_header() {
     echo -e "\n${CYAN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
@@ -28,16 +43,17 @@ print_test() {
     fi
 }
 
-API_KEY="demo-api-key-12345"
-
 print_header "STEP 10: TEST SECURITY FEATURES"
+
+echo -e "${BLUE}Note: Rate limits are configured (10/min, 100/hour per consumer)${NC}"
+echo -e "${BLUE}If you see rate limit errors, wait 60 seconds and retry.${NC}\n"
 
 # Test 1: AI Prompt Guard - Block Jailbreak Attempts
 print_header "AI PROMPT GUARD TESTS"
 
-print_test "1. Normal prompt (should succeed)" "POST http://localhost:8000/ai/kong/ollama/chat"
-curl -s -H "apikey: $API_KEY" \
-  -X POST http://localhost:8000/ai/kong/ollama/chat \
+print_test "1. Normal prompt (should succeed)" "POST $KONG_PROXY_URL/ai/kong/ollama/chat"
+curl -s -H "apikey: $DEMO_API_KEY" \
+  -X POST $KONG_PROXY_URL/ai/kong/ollama/chat \
   -H 'Content-Type: application/json' \
   -d '{
     "messages": [
@@ -48,9 +64,9 @@ curl -s -H "apikey: $API_KEY" \
     ]
   }' | jq '{status: .error // "success", message: (.choices[0].message.content // .message)}'
 
-print_test "2. Jailbreak attempt - 'ignore previous instructions' (should be blocked)" "POST http://localhost:8000/ai/kong/ollama/chat"
-curl -s -H "apikey: $API_KEY" \
-  -X POST http://localhost:8000/ai/kong/ollama/chat \
+print_test "2. Jailbreak attempt - 'ignore previous instructions' (should be blocked)" "POST $KONG_PROXY_URL/ai/kong/ollama/chat"
+curl -s -H "apikey: $DEMO_API_KEY" \
+  -X POST $KONG_PROXY_URL/ai/kong/ollama/chat \
   -H 'Content-Type: application/json' \
   -d '{
     "messages": [
@@ -61,9 +77,9 @@ curl -s -H "apikey: $API_KEY" \
     ]
   }' | jq '.'
 
-print_test "3. DAN attack - 'act as DAN' (should be blocked)" "POST http://localhost:8000/ai/kong/gemini/chat"
-curl -s -H "apikey: $API_KEY" \
-  -X POST http://localhost:8000/ai/kong/gemini/chat \
+print_test "3. DAN attack - 'act as DAN' (should be blocked)" "POST $KONG_PROXY_URL/ai/kong/gemini/chat"
+curl -s -H "apikey: $DEMO_API_KEY" \
+  -X POST $KONG_PROXY_URL/ai/kong/gemini/chat \
   -H 'Content-Type: application/json' \
   -d '{
     "messages": [
@@ -74,9 +90,9 @@ curl -s -H "apikey: $API_KEY" \
     ]
   }' | jq '.'
 
-print_test "4. System prompt manipulation (should be blocked)" "POST http://localhost:8000/ai/kong/ollama/chat"
-curl -s -H "apikey: $API_KEY" \
-  -X POST http://localhost:8000/ai/kong/ollama/chat \
+print_test "4. System prompt manipulation (should be blocked)" "POST $KONG_PROXY_URL/ai/kong/ollama/chat"
+curl -s -H "apikey: $DEMO_API_KEY" \
+  -X POST $KONG_PROXY_URL/ai/kong/ollama/chat \
   -H 'Content-Type: application/json' \
   -d '{
     "messages": [
@@ -92,15 +108,15 @@ print_header "RESPONSE TRANSFORMER TESTS"
 
 print_test "5. Check custom headers on Kong Native AI (Ollama)"
 echo -e "${BLUE}Checking response headers...${NC}"
-curl -v -H "apikey: $API_KEY" \
-  -X POST http://localhost:8000/ai/kong/ollama/chat \
+curl -v -H "apikey: $DEMO_API_KEY" \
+  -X POST $KONG_PROXY_URL/ai/kong/ollama/chat \
   -H 'Content-Type: application/json' \
   -d '{"messages":[{"role":"user","content":"Hi"}]}' 2>&1 \
   | grep -E "X-AI-Gateway-Mode|X-AI-Provider|X-Powered-By|X-Request-ID"
 
 print_test "6. Check custom headers on Custom AI Router"
-curl -v -H "apikey: $API_KEY" \
-  -X POST http://localhost:8000/ai/custom/chat \
+curl -v -H "apikey: $DEMO_API_KEY" \
+  -X POST $KONG_PROXY_URL/ai/custom/chat \
   -H 'Content-Type: application/json' \
   -d '{"message":"Hi","provider":"openai"}' 2>&1 \
   | grep -E "X-AI-Gateway-Mode|X-Powered-By|X-Request-ID"
@@ -109,8 +125,8 @@ curl -v -H "apikey: $API_KEY" \
 print_header "REQUEST SIZE LIMITING TESTS"
 
 print_test "7. Normal sized request (should succeed)"
-curl -s -H "apikey: $API_KEY" \
-  -X POST http://localhost:8000/ai/kong/ollama/chat \
+curl -s -H "apikey: $DEMO_API_KEY" \
+  -X POST $KONG_PROXY_URL/ai/kong/ollama/chat \
   -H 'Content-Type: application/json' \
   -d '{
     "messages": [
@@ -124,8 +140,8 @@ curl -s -H "apikey: $API_KEY" \
 print_test "8. Extremely large request (would be blocked if > 10MB)"
 echo -e "${BLUE}Creating large payload...${NC}"
 LARGE_CONTENT=$(python3 -c "print('A' * 1000)")
-curl -s -H "apikey: $API_KEY" \
-  -X POST http://localhost:8000/ai/custom/chat \
+curl -s -H "apikey: $DEMO_API_KEY" \
+  -X POST $KONG_PROXY_URL/ai/custom/chat \
   -H 'Content-Type: application/json' \
   -d "{\"message\":\"$LARGE_CONTENT\",\"provider\":\"openai\"}" \
   | jq '{status: .error // "success", message: .message // "OK"}'
@@ -137,8 +153,8 @@ print_test "9. Check correlation ID in responses"
 echo -e "${BLUE}Making multiple requests...${NC}"
 for i in {1..3}; do
     echo -e "\nRequest $i:"
-    curl -s -H "apikey: $API_KEY" \
-      http://localhost:8000/ai/custom/models \
+    curl -s -H "apikey: $DEMO_API_KEY" \
+      $KONG_PROXY_URL/ai/custom/models \
       -w "\nX-Request-ID: %{header_x_request_id}\n" \
       | grep -E "X-Request-ID|success"
 done
@@ -148,8 +164,8 @@ print_header "COMPLETE SECURITY FLOW"
 
 print_test "10. Legitimate AI Request with All Security"
 echo -e "${BLUE}Testing complete security stack...${NC}"
-RESPONSE=$(curl -v -H "apikey: $API_KEY" \
-  -X POST http://localhost:8000/ai/kong/ollama/chat \
+RESPONSE=$(curl -v -H "apikey: $DEMO_API_KEY" \
+  -X POST $KONG_PROXY_URL/ai/kong/ollama/chat \
   -H 'Content-Type: application/json' \
   -d '{
     "messages": [
@@ -167,7 +183,13 @@ echo -e "\n${MAGENTA}Rate Limit Headers:${NC}"
 echo "$RESPONSE" | grep -i "x-ratelimit" || echo "Rate limit active"
 
 echo -e "\n${MAGENTA}Response Body:${NC}"
-echo "$RESPONSE" | grep -A 20 "^{" | jq '.'
+BODY=$(echo "$RESPONSE" | grep -A 50 "^{" | head -20)
+if echo "$BODY" | jq -e . >/dev/null 2>&1; then
+  echo "$BODY" | jq '.'
+else
+  echo "$BODY"
+  echo -e "${YELLOW}Note: Response may be rate limited or invalid JSON${NC}"
+fi
 
 # Summary
 echo -e "\n${GREEN}╔════════════════════════════════════════════════════════════════╗${NC}"
@@ -193,3 +215,30 @@ echo -e "  🤖 AI Models: Ollama Mistral (local), Gemini 2.5 Flash (cloud)"
 
 echo -e "\n${BLUE}View analytics in Kong Konnect UI:${NC}"
 echo -e "  https://cloud.konghq.com"
+
+echo -e "\n${YELLOW}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+echo -e "${YELLOW}🎓 Advanced Learning - Next Steps${NC}"
+echo -e "${YELLOW}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}\n"
+
+echo -e "${CYAN}Continue with advanced features:${NC}"
+echo -e ""
+echo -e "${GREEN}Phase 5: Ollama Optimization${NC}"
+echo -e "  ./11-fix-ollama-config.sh       # Deploy Ollama with llama2 provider"
+echo -e ""
+echo -e "${GREEN}Phase 6: Redis Integration${NC}"
+echo -e "  ./12-add-redis-plugins.sh       # Add Redis-backed rate limiting"
+echo -e "  ./13-test-redis-rate-limits.sh  # Test centralized rate limits"
+echo -e "  ./16-test-redis-connection.sh   # Verify Redis connectivity"
+echo -e ""
+echo -e "${YELLOW}Phase 7: Enterprise Features (Requires License)${NC}"
+echo -e "  ./14-add-semantic-prompt-guard.sh  # ❌ Vector-based security"
+echo -e "  ./15-test-semantic-guard.sh        # ❌ Test semantic guard"
+echo -e "  ./17-add-semantic-cache.sh         # ❌ AI response caching"
+echo -e ""
+echo -e "${BLUE}📚 Learn more about:${NC}"
+echo -e "  • Redis-backed rate limiting (distributed across Kong nodes)"
+echo -e "  • Semantic caching with vector databases"
+echo -e "  • Advanced AI security patterns"
+echo -e "  • Multi-model AI routing strategies"
+echo -e ""
+echo -e "${CYAN}💡 Tip: Check scripts/README.md for detailed documentation${NC}"

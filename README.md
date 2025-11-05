@@ -135,19 +135,26 @@ Perfect for demonstrating both Kong's native AI capabilities AND the flexibility
 ```
 presentation-demo/
 ├── scripts/                        # 🎯 Automated Setup Scripts
-│   ├── 00-cleanup.sh              # 🧹 Clean everything (reset)
-│   ├── 00-workflow.sh             # 📖 Workflow overview (START HERE!)
-│   ├── 01-install-services.sh     # Deploy to K8s
-│   ├── 02-test-without-kong.sh    # Test direct
-│   ├── 03-configure-kong-basic.sh # Basic Kong
-│   ├── 04-test-with-kong.sh       # Test Kong
-│   ├── 05-add-authentication.sh   # Add auth
-│   ├── 06-test-authentication.sh  # Test auth
-│   ├── 07-add-ai-proxy.sh         # Add AI
-│   ├── 08-test-ai-services.sh     # Test AI
-│   ├── 09-add-ai-security.sh      # Add security
-│   ├── 10-test-security.sh        # Test security
-│   ├── test-all-apis.sh           # Comprehensive tests
+│   ├── 01-install-services.sh     # Deploy to Kubernetes
+│   ├── 02-test-without-kong.sh    # Test services directly
+│   ├── 03-configure-kong-basic.sh # Generate basic Kong config
+│   ├── 04-test-with-kong.sh       # Test through Kong
+│   ├── 05-add-authentication.sh   # Generate auth config
+│   ├── 06-test-authentication.sh  # Test auth & rate limiting
+│   ├── 07-add-ai-proxy.sh         # Generate AI proxy config
+│   ├── 08-test-ai-services.sh     # Test AI endpoints
+│   ├── 09-add-ai-security.sh      # Generate security config
+│   ├── 10-test-security.sh        # Test security features
+│   ├── 11-fix-ollama-config.sh    # Fix Ollama provider
+│   ├── 12-add-redis-plugins.sh    # Add Redis rate limiting
+│   ├── 13-test-redis-rate-limits.sh # Test Redis integration
+│   ├── 14-add-semantic-prompt-guard.sh # Vector security (Enterprise)
+│   ├── 15-test-semantic-guard.sh  # Test semantic guard (Enterprise)
+│   ├── 16-test-redis-connection.sh # Test Redis
+│   ├── 17-add-semantic-cache.sh   # Semantic cache (Enterprise)
+│   ├── cleanup.sh                 # 🧹 Clean everything
+│   ├── workflow.sh                # 📖 Workflow overview
+│   ├── load-env.sh                # Load environment variables
 │   └── README.md                   # Detailed script guide
 │
 ├── plugins/                        # 🔌 Kong Configuration Files
@@ -155,8 +162,10 @@ presentation-demo/
 │   ├── 02-kong-with-auth.yaml     # + Authentication
 │   ├── 03-kong-with-ai-proxy.yaml # + AI Services
 │   ├── 04-kong-complete.yaml      # + Security (Production)
-│   ├── README.md                   # Plugin overview
-│   └── plugin_evolution.md        # Detailed evolution guide
+│   ├── 06-kong-with-ollama-fixed.yaml # + Fixed Ollama (llama2)
+│   ├── 07-kong-with-redis-plugins.yaml # + Redis rate limiting
+│   ├── 08-kong-with-semantic-guard.yaml # + Vector-based security
+│   └── README.md                   # Plugin overview
 │
 ├── kubernetes/                      # Kubernetes configurations
 │   └── namespace.yaml              # demo-apis namespace
@@ -199,46 +208,49 @@ presentation-demo/
 
 ```bash
 cd scripts
-./00-workflow.sh  # Shows complete workflow, prerequisites, and quick commands
+./workflow.sh  # Shows complete workflow, prerequisites, and quick commands
 ```
 
-**2. Follow the 5-phase automated setup:**
+**2. Progressive Setup (01-13):**
 
 ```bash
-# Phase 1: Setup & Test Services
+# Phase 1: Setup & Basic Kong
 ./01-install-services.sh        # Deploy to Kubernetes
-./02-test-without-kong.sh       # Verify services work directly
+./02-test-without-kong.sh       # Test services directly
+./03-configure-kong-basic.sh    # Generate basic config + apply with deck
+./04-test-with-kong.sh          # Test through Kong
 
-# Phase 2: Basic Kong Routing
-./03-configure-kong-basic.sh    # Generates plugins/01-kong-basic.yaml
-# Then apply with decK:
-deck gateway sync \
-  --konnect-control-plane-name='Kong-Demo' \
-  --konnect-addr='https://in.api.konghq.com' \
-  --konnect-token='YOUR_TOKEN' \
-  ../plugins/01-kong-basic.yaml
-./04-test-with-kong.sh          # Test routing through Kong
-
-# Phase 3: Add Authentication
-./05-add-authentication.sh      # Generates plugins/02-kong-with-auth.yaml
-# Then apply: deck gateway sync ... ../plugins/02-kong-with-auth.yaml
+# Phase 2: Authentication
+./05-add-authentication.sh      # Generate auth config + apply with deck
 ./06-test-authentication.sh     # Test auth & rate limiting
 
-# Phase 4: Add AI Services
-./07-add-ai-proxy.sh            # Generates plugins/03-kong-with-ai-proxy.yaml (prompts for Gemini key)
-# Then apply: deck gateway sync ... ../plugins/03-kong-with-ai-proxy.yaml
+# Phase 3: AI Services
+./07-add-ai-proxy.sh            # Generate AI config + apply with deck
 ./08-test-ai-services.sh        # Test AI endpoints
 
-# Phase 5: Add Production Security
-./09-add-ai-security.sh         # Generates plugins/04-kong-complete.yaml
-# Then apply: deck gateway sync ... ../plugins/04-kong-complete.yaml
+# Phase 4: Security
+./09-add-ai-security.sh         # Generate security config + apply with deck
 ./10-test-security.sh           # Test security features
+
+# Phase 5: Ollama Fix & Redis
+./11-fix-ollama-config.sh       # Fix Ollama (auto-deploys)
+./12-add-redis-plugins.sh       # Add Redis (auto-deploys)
+./13-test-redis-rate-limits.sh  # Test Redis
 ```
 
-**3. Reset everything when needed:**
+**3. Advanced Features (14-17) - Enterprise Required:**
 
 ```bash
-./00-cleanup.sh  # Removes all Kong configs, K8s resources, port-forwards, Docker containers
+./14-add-semantic-prompt-guard.sh # ❌ Vector-based security
+./15-test-semantic-guard.sh       # ❌ Test semantic guard
+./16-test-redis-connection.sh     # ✅ Helper tool
+./17-add-semantic-cache.sh        # ❌ Semantic caching
+```
+
+**4. Reset everything when needed:**
+
+```bash
+./cleanup.sh  # Removes all Kong configs, K8s resources, port-forwards
 ```
 
 ### 📚 Additional Documentation
@@ -672,12 +684,15 @@ curl http://localhost:8001/status
 - **Dev Portal**: API documentation and discovery
 
 ### 🔌 Progressive Plugin Configuration
-| Stage | File | Services | Routes | Plugins | Use Case |
+| Stage | File | Services | Routes | Plugins | Features |
 |-------|------|----------|--------|---------|----------|
 | 1. Basic | `01-kong-basic.yaml` | 2 | 2 | 0 | Basic routing test |
-| 2. Auth | `02-kong-with-auth.yaml` | 2 | 2 | 5 | Add authentication |
-| 3. AI | `03-kong-with-ai-proxy.yaml` | 4 | 6 | 11 | Add AI services |
-| 4. Complete | `04-kong-complete.yaml` | 4 | 6 | 14 | Production ready |
+| 2. Auth | `02-kong-with-auth.yaml` | 2 | 2 | 5 | Authentication & rate limiting (local) |
+| 3. AI | `03-kong-with-ai-proxy.yaml` | 4 | 5 | 11 | AI services (Ollama + Gemini) |
+| 4. Complete | `04-kong-complete.yaml` | 4 | 5 | 14 | Production security |
+| 5. Ollama Fixed | `06-kong-with-ollama-fixed.yaml` | 4 | 5 | 16 | Fixed Ollama provider (llama2) |
+| 6. Redis | `07-kong-with-redis-plugins.yaml` | 4 | 5 | 14 | Redis-backed rate limiting |
+| 7. Semantic Guard | `08-kong-with-semantic-guard.yaml` | 4 | 5 | 15 | Vector-based prompt injection detection |
 
 
 ## 🔧 Troubleshooting
