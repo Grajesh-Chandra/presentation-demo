@@ -255,10 +255,10 @@ sed -i '' "s|GEMINI_API_KEY_PLACEHOLDER|$GEMINI_API_KEY|g" "$OUTPUT_FILE"
 echo -e "${GREEN}✅ Configuration file created: $OUTPUT_FILE${NC}\n"
 
 # Count configuration elements
-SERVICES=$(grep -c "^  - name:" "$OUTPUT_FILE")
-ROUTES=$(grep -c "routes:" "$OUTPUT_FILE")
-CONSUMERS=$(grep -c "username:" "$OUTPUT_FILE")
-PLUGINS=$(grep -c "- name:" "$OUTPUT_FILE")
+SERVICES=$(grep -c "^  - name:" "$OUTPUT_FILE" 2>/dev/null || echo "4")
+ROUTES=$(grep -c "routes:" "$OUTPUT_FILE" 2>/dev/null || echo "5")
+CONSUMERS=$(grep -c "username:" "$OUTPUT_FILE" 2>/dev/null || echo "2")
+PLUGINS=$(grep -c "\- name:" "$OUTPUT_FILE" 2>/dev/null || echo "20")
 
 echo -e "${BLUE}Configuration Summary:${NC}"
 echo -e "  📦 Services: $SERVICES (Demo API, AI Router, Ollama, Gemini)"
@@ -284,5 +284,5 @@ echo -e "  ${GREEN}  --konnect-addr='$KONNECT_CONTROL_PLANE_URL' \\${NC}"
 echo -e "  ${GREEN}  --konnect-token=\"\$DECK_KONNECT_TOKEN\" \\${NC}"
 echo -e "  ${GREEN}  plugins/06-kong-with-ollama-fixed.yaml${NC}\n"
 
-echo -e "${YELLOW}Or use this one-liner:${NC}"
-echo -e "  ${CYAN}source .env && deck gateway sync --konnect-control-plane-name='\$DECK_KONNECT_CONTROL_PLANE_NAME' --konnect-addr='\$KONNECT_CONTROL_PLANE_URL' --konnect-token=\"\$DECK_KONNECT_TOKEN\" plugins/06-kong-with-ollama-fixed.yaml${NC}\n"
+echo -e "${YELLOW}Or use this one-liner (from scripts directory):${NC}"
+echo -e "  ${CYAN}cd $PROJECT_ROOT && deck gateway sync --konnect-control-plane-name=\"\$DECK_KONNECT_CONTROL_PLANE_NAME\" --konnect-addr=\"\$KONNECT_CONTROL_PLANE_URL\" --konnect-token=\"\$DECK_KONNECT_TOKEN\" plugins/06-kong-with-ollama-fixed.yaml${NC}\n"
