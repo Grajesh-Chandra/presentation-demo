@@ -1,0 +1,289 @@
+openapi: 3.0.3
+info:
+  title: Demo API
+  version: 1.0.0
+  description: |
+    Sample Node.js REST API demonstrating Kong Gateway features:
+    - API Key Authentication
+    - Consumer-based Rate Limiting
+    - Health Monitoring
+    - High Availability Deployment
+  contact:
+    name: API Support
+    email: api-support@example.com
+
+servers:
+  - url: http://localhost:8000/api/demo
+    description: Kong Gateway (Local Development)
+  - url: https://api.yourdomain.com/api/demo
+    description: Production
+
+tags:
+  - name: Users
+    description: User management operations
+  - name: Products
+    description: Product catalog operations
+  - name: Health
+    description: Service health and monitoring
+
+security:
+  - ApiKeyAuth: []
+
+paths:
+  /health:
+    get:
+      summary: Health Check
+      description: Check if the API is running and healthy
+      tags:
+        - Health
+      security: []  # No auth required for health
+      responses:
+        '200':
+          description: API is healthy
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: "healthy"
+                  timestamp:
+                    type: string
+                    format: date-time
+                  version:
+                    type: string
+                    example: "1.0.0"
+
+  /api/v1/users:
+    get:
+      summary: List All Users
+      description: Retrieve a list of all users (demo data)
+      tags:
+        - Users
+      security:
+        - ApiKeyAuth: []
+      responses:
+        '200':
+          description: Successfully retrieved users
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/User'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '429':
+          $ref: '#/components/responses/RateLimitExceeded'
+
+  /api/v1/users/{id}:
+    get:
+      summary: Get User by ID
+      description: Retrieve details of a specific user
+      tags:
+        - Users
+      security:
+        - ApiKeyAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: User ID
+          schema:
+            type: integer
+            example: 1
+      responses:
+        '200':
+          description: Successfully retrieved user
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '404':
+          description: User not found
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '429':
+          $ref: '#/components/responses/RateLimitExceeded'
+
+  /api/v1/products:
+    get:
+      summary: List All Products
+      description: Retrieve a list of all products (demo data)
+      tags:
+        - Products
+      security:
+        - ApiKeyAuth: []
+      responses:
+        '200':
+          description: Successfully retrieved products
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Product'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '429':
+          $ref: '#/components/responses/RateLimitExceeded'
+
+  /api/v1/products/{id}:
+    get:
+      summary: Get Product by ID
+      description: Retrieve details of a specific product
+      tags:
+        - Products
+      security:
+        - ApiKeyAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Product ID
+          schema:
+            type: integer
+            example: 1
+      responses:
+        '200':
+          description: Successfully retrieved product
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Product'
+        '404':
+          description: Product not found
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '429':
+          $ref: '#/components/responses/RateLimitExceeded'
+
+  /api/v1/stats:
+    get:
+      summary: Get API Statistics
+      description: Retrieve current API usage statistics
+      tags:
+        - Health
+      security:
+        - ApiKeyAuth: []
+      responses:
+        '200':
+          description: Successfully retrieved stats
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  totalRequests:
+                    type: integer
+                    example: 1523
+                  uptime:
+                    type: number
+                    example: 3600.5
+                  activeConnections:
+                    type: integer
+                    example: 3
+
+components:
+  securitySchemes:
+    ApiKeyAuth:
+      type: apiKey
+      in: header
+      name: apikey
+      description: |
+        API key authentication. Obtain your key from the Dev Portal.
+
+        **Rate Limits by Tier:**
+        - Basic: 10 requests/minute
+        - Premium: 100 requests/minute
+        - Admin: Unlimited
+
+  schemas:
+    User:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+        name:
+          type: string
+          example: "John Doe"
+        email:
+          type: string
+          format: email
+          example: "john.doe@example.com"
+        role:
+          type: string
+          enum: [user, admin]
+          example: "user"
+        createdAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - name
+        - email
+
+    Product:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+        name:
+          type: string
+          example: "Laptop"
+        price:
+          type: number
+          format: float
+          example: 999.99
+        category:
+          type: string
+          example: "Electronics"
+        inStock:
+          type: boolean
+          example: true
+      required:
+        - id
+        - name
+        - price
+
+  responses:
+    Unauthorized:
+      description: Unauthorized - Invalid or missing API key
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              message:
+                type: string
+                example: "Unauthorized"
+              request_id:
+                type: string
+                example: "abc123def456"
+
+    RateLimitExceeded:
+      description: Rate limit exceeded
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              message:
+                type: string
+                example: "API rate limit exceeded"
+      headers:
+        X-RateLimit-Limit-Minute:
+          schema:
+            type: integer
+          description: Requests allowed per minute
+        X-RateLimit-Remaining-Minute:
+          schema:
+            type: integer
+          description: Requests remaining in current window
+        Retry-After:
+          schema:
+            type: integer
+          description: Seconds until rate limit resets
