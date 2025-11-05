@@ -23,6 +23,9 @@ print_header() {
 
 print_test() {
     echo -e "\n${YELLOW}TEST: $1${NC}"
+    if [ ! -z "$2" ]; then
+        echo -e "${CYAN}Endpoint: $2${NC}"
+    fi
 }
 
 API_KEY="demo-api-key-12345"
@@ -32,7 +35,7 @@ print_header "STEP 10: TEST SECURITY FEATURES"
 # Test 1: AI Prompt Guard - Block Jailbreak Attempts
 print_header "AI PROMPT GUARD TESTS"
 
-print_test "1. Normal prompt (should succeed)"
+print_test "1. Normal prompt (should succeed)" "POST http://localhost:8000/ai/kong/ollama/chat"
 curl -s -H "apikey: $API_KEY" \
   -X POST http://localhost:8000/ai/kong/ollama/chat \
   -H 'Content-Type: application/json' \
@@ -45,7 +48,7 @@ curl -s -H "apikey: $API_KEY" \
     ]
   }' | jq '{status: .error // "success", message: (.choices[0].message.content // .message)}'
 
-print_test "2. Jailbreak attempt - 'ignore previous instructions' (should be blocked)"
+print_test "2. Jailbreak attempt - 'ignore previous instructions' (should be blocked)" "POST http://localhost:8000/ai/kong/ollama/chat"
 curl -s -H "apikey: $API_KEY" \
   -X POST http://localhost:8000/ai/kong/ollama/chat \
   -H 'Content-Type: application/json' \
@@ -58,7 +61,7 @@ curl -s -H "apikey: $API_KEY" \
     ]
   }' | jq '.'
 
-print_test "3. DAN attack - 'act as DAN' (should be blocked)"
+print_test "3. DAN attack - 'act as DAN' (should be blocked)" "POST http://localhost:8000/ai/kong/gemini/chat"
 curl -s -H "apikey: $API_KEY" \
   -X POST http://localhost:8000/ai/kong/gemini/chat \
   -H 'Content-Type: application/json' \
@@ -71,7 +74,7 @@ curl -s -H "apikey: $API_KEY" \
     ]
   }' | jq '.'
 
-print_test "4. System prompt manipulation (should be blocked)"
+print_test "4. System prompt manipulation (should be blocked)" "POST http://localhost:8000/ai/kong/ollama/chat"
 curl -s -H "apikey: $API_KEY" \
   -X POST http://localhost:8000/ai/kong/ollama/chat \
   -H 'Content-Type: application/json' \

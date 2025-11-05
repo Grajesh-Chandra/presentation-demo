@@ -22,6 +22,9 @@ print_header() {
 
 print_test() {
     echo -e "\n${YELLOW}TEST: $1${NC}"
+    if [ ! -z "$2" ]; then
+        echo -e "${CYAN}Endpoint: $2${NC}"
+    fi
 }
 
 print_header "STEP 04: TEST APIS THROUGH KONG"
@@ -39,36 +42,36 @@ fi
 # Demo API Tests via Kong
 print_header "DEMO API TESTS (via Kong)"
 
-print_test "1. Health Check"
+print_test "1. Health Check" "http://localhost:8000/api/demo/health"
 curl -s http://localhost:8000/api/demo/health | jq '.'
 
-print_test "2. Get Users"
+print_test "2. Get Users" "http://localhost:8000/api/demo/api/v1/users"
 curl -s http://localhost:8000/api/demo/api/v1/users | jq '.'
 
-print_test "3. Get User by ID"
+print_test "3. Get User by ID" "http://localhost:8000/api/demo/api/v1/users/1"
 curl -s http://localhost:8000/api/demo/api/v1/users/1 | jq '.'
 
-print_test "4. Get Products"
+print_test "4. Get Products" "http://localhost:8000/api/demo/api/v1/products"
 curl -s http://localhost:8000/api/demo/api/v1/products | jq '.'
 
-print_test "5. Get Statistics"
+print_test "5. Get Statistics" "http://localhost:8000/api/demo/api/v1/stats"
 curl -s http://localhost:8000/api/demo/api/v1/stats | jq '.'
 
 # AI Router Tests via Kong
 print_header "AI ROUTER TESTS (via Kong)"
 
-print_test "6. Health Check"
+print_test "6. Health Check" "http://localhost:8000/ai/health"
 curl -s http://localhost:8000/ai/health | jq '.'
 
-print_test "7. List Models"
+print_test "7. List Models" "http://localhost:8000/ai/models"
 curl -s http://localhost:8000/ai/models | jq '.'
 
-print_test "8. Chat with Mock Provider"
+print_test "8. Chat with Mock Provider" "POST http://localhost:8000/ai/chat"
 curl -s -X POST http://localhost:8000/ai/chat \
   -H 'Content-Type: application/json' \
   -d '{"message":"Hello from Kong","provider":"openai","model":"gpt-4"}' | jq '.'
 
-print_test "9. Get Statistics"
+print_test "9. Get Statistics" "http://localhost:8000/ai/stats"
 curl -s http://localhost:8000/ai/stats | jq '.'
 
 echo -e "\n${GREEN}✅ All Kong routing tests completed!${NC}"
