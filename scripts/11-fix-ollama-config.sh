@@ -277,12 +277,31 @@ echo -e "  ✅ Updated Gemini model to gemini-2.0-flash-exp"
 
 echo -e "\n${CYAN}Next Step: Apply configuration to Konnect${NC}"
 echo -e "${BLUE}Run the following command:${NC}\n"
-echo -e "  ${GREEN}cd $PROJECT_ROOT${NC}"
-echo -e "  ${GREEN}deck gateway sync \\${NC}"
-echo -e "  ${GREEN}  --konnect-control-plane-name='$DECK_KONNECT_CONTROL_PLANE_NAME' \\${NC}"
-echo -e "  ${GREEN}  --konnect-addr='$KONNECT_CONTROL_PLANE_URL' \\${NC}"
-echo -e "  ${GREEN}  --konnect-token=\"\$DECK_KONNECT_TOKEN\" \\${NC}"
-echo -e "  ${GREEN}  plugins/06-kong-with-ollama-fixed.yaml${NC}\n"
 
-echo -e "${YELLOW}Or use this one-liner (from scripts directory):${NC}"
-echo -e "  ${CYAN}cd $PROJECT_ROOT && deck gateway sync --konnect-control-plane-name=\"\$DECK_KONNECT_CONTROL_PLANE_NAME\" --konnect-addr=\"\$KONNECT_CONTROL_PLANE_URL\" --konnect-token=\"\$DECK_KONNECT_TOKEN\" plugins/06-kong-with-ollama-fixed.yaml${NC}\n"
+# Load token from .env if not already loaded
+if [ -z "$DECK_KONNECT_TOKEN" ]; then
+    source "$PROJECT_ROOT/.env"
+fi
+
+if [ -n "$DECK_KONNECT_TOKEN" ]; then
+    echo -e "  ${GREEN}cd $PROJECT_ROOT${NC}"
+    echo -e "  ${GREEN}deck gateway sync \\${NC}"
+    echo -e "  ${GREEN}  --konnect-control-plane-name='$DECK_KONNECT_CONTROL_PLANE_NAME' \\${NC}"
+    echo -e "  ${GREEN}  --konnect-addr='$KONNECT_CONTROL_PLANE_URL' \\${NC}"
+    echo -e "  ${GREEN}  --konnect-token='$DECK_KONNECT_TOKEN' \\${NC}"
+    echo -e "  ${GREEN}  plugins/06-kong-with-ollama-fixed.yaml${NC}\n"
+
+    echo -e "${YELLOW}Or use this one-liner (from scripts directory):${NC}"
+    echo -e "  ${CYAN}cd $PROJECT_ROOT && deck gateway sync --konnect-control-plane-name='$DECK_KONNECT_CONTROL_PLANE_NAME' --konnect-addr='$KONNECT_CONTROL_PLANE_URL' --konnect-token='$DECK_KONNECT_TOKEN' plugins/06-kong-with-ollama-fixed.yaml${NC}\n"
+else
+    echo -e "  ${GREEN}cd $PROJECT_ROOT${NC}"
+    echo -e "  ${GREEN}deck gateway sync \\${NC}"
+    echo -e "  ${GREEN}  --konnect-control-plane-name='$DECK_KONNECT_CONTROL_PLANE_NAME' \\${NC}"
+    echo -e "  ${GREEN}  --konnect-addr='$KONNECT_CONTROL_PLANE_URL' \\${NC}"
+    echo -e "  ${GREEN}  --konnect-token='\$DECK_KONNECT_TOKEN' \\${NC}"
+    echo -e "  ${GREEN}  plugins/06-kong-with-ollama-fixed.yaml${NC}\n"
+
+    echo -e "${YELLOW}Or use this one-liner (from scripts directory):${NC}"
+    echo -e "  ${CYAN}cd $PROJECT_ROOT && deck gateway sync --konnect-control-plane-name=\"\$DECK_KONNECT_CONTROL_PLANE_NAME\" --konnect-addr=\"\$KONNECT_CONTROL_PLANE_URL\" --konnect-token=\"\$DECK_KONNECT_TOKEN\" plugins/06-kong-with-ollama-fixed.yaml${NC}\n"
+    echo -e "${YELLOW}Note: Add DECK_KONNECT_TOKEN to .env file to see actual token${NC}\n"
+fi

@@ -35,10 +35,34 @@ print_header() {
 }
 
 print_test() {
-    echo -e "\n${YELLOW}TEST: $1${NC}"
-    if [ ! -z "$2" ]; then
-        echo -e "${CYAN}Endpoint: $2${NC}"
+    echo -e "\n${YELLOW}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+    echo -e "${YELLOW}TEST: $1${NC}"
+    echo -e "${YELLOW}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+}
+
+print_request() {
+    local method=$1
+    local url=$2
+    local headers=$3
+    local body=$4
+
+    echo -e "\n${BLUE}📤 REQUEST:${NC}"
+    echo -e "  Method: ${GREEN}${method}${NC}"
+    echo -e "  URL: ${CYAN}${url}${NC}"
+
+    if [ ! -z "$headers" ]; then
+        echo -e "  Headers:"
+        echo "$headers" | while IFS= read -r header; do
+            [ ! -z "$header" ] && echo -e "    ${header}"
+        done
     fi
+
+    if [ ! -z "$body" ]; then
+        echo -e "  Body:"
+        echo "$body" | jq '.' 2>/dev/null || echo "    $body"
+    fi
+
+    echo -e "\n${BLUE}📥 RESPONSE:${NC}"
 }
 
 print_header "STEP 04: TEST APIS THROUGH KONG"
@@ -56,36 +80,46 @@ fi
 # Demo API Tests via Kong
 print_header "DEMO API TESTS (via Kong)"
 
-print_test "1. Health Check" "$KONG_PROXY_URL/api/demo/health"
+print_test "1. Health Check"
+print_request "GET" "$KONG_PROXY_URL/api/demo/health"
 curl -s $KONG_PROXY_URL/api/demo/health | jq '.'
 
-print_test "2. Get Users" "$KONG_PROXY_URL/api/demo/api/v1/users"
+print_test "2. Get Users"
+print_request "GET" "$KONG_PROXY_URL/api/demo/api/v1/users"
 curl -s $KONG_PROXY_URL/api/demo/api/v1/users | jq '.'
 
-print_test "3. Get User by ID" "$KONG_PROXY_URL/api/demo/api/v1/users/1"
+print_test "3. Get User by ID"
+print_request "GET" "$KONG_PROXY_URL/api/demo/api/v1/users/1"
 curl -s $KONG_PROXY_URL/api/demo/api/v1/users/1 | jq '.'
 
-print_test "4. Get Products" "$KONG_PROXY_URL/api/demo/api/v1/products"
+print_test "4. Get Products"
+print_request "GET" "$KONG_PROXY_URL/api/demo/api/v1/products"
 curl -s $KONG_PROXY_URL/api/demo/api/v1/products | jq '.'
 
-print_test "5. Get Statistics" "$KONG_PROXY_URL/api/demo/api/v1/stats"
+print_test "5. Get Statistics"
+print_request "GET" "$KONG_PROXY_URL/api/demo/api/v1/stats"
 curl -s $KONG_PROXY_URL/api/demo/api/v1/stats | jq '.'
 
 # AI Router Tests via Kong
 print_header "AI ROUTER TESTS (via Kong)"
 
-print_test "6. Health Check" "$KONG_PROXY_URL/ai/health"
+print_test "6. Health Check"
+print_request "GET" "$KONG_PROXY_URL/ai/health"
 curl -s $KONG_PROXY_URL/ai/health | jq '.'
 
-print_test "7. List Models" "$KONG_PROXY_URL/ai/models"
+print_test "7. List Models"
+print_request "GET" "$KONG_PROXY_URL/ai/models"
 curl -s $KONG_PROXY_URL/ai/models | jq '.'
 
-print_test "8. Chat with Mock Provider" "POST $KONG_PROXY_URL/ai/chat"
+print_test "8. Chat with Mock Provider"
+BODY='{"message":"Hello from Kong","provider":"openai","model":"gpt-4"}'
+print_request "POST" "$KONG_PROXY_URL/ai/chat" "Content-Type: application/json" "$BODY"
 curl -s -X POST $KONG_PROXY_URL/ai/chat \
   -H 'Content-Type: application/json' \
-  -d '{"message":"Hello from Kong","provider":"openai","model":"gpt-4"}' | jq '.'
+  -d "$BODY" | jq '.'
 
-print_test "9. Get Statistics" "$KONG_PROXY_URL/ai/stats"
+print_test "9. Get Statistics"
+print_request "GET" "$KONG_PROXY_URL/ai/stats"
 curl -s $KONG_PROXY_URL/ai/stats | jq '.'
 
 echo -e "\n${GREEN}✅ All Kong routing tests completed!${NC}"

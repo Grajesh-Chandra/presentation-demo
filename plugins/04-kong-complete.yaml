@@ -1,44 +1,3 @@
-#!/bin/bash
-
-# ==============================================================================
-# 09 - Add AI Security (Prompt Guard & Response Transformer)
-# ==============================================================================
-# Adds AI Prompt Guard, Response Transformer, and additional security plugins
-# ==============================================================================
-
-set -e
-
-# Colors
-GREEN='\033[0;32m'
-YELLOW='\033[1;33m'
-BLUE='\033[0;34m'
-CYAN='\033[0;36m'
-MAGENTA='\033[0;35m'
-NC='\033[0m'
-
-print_header() {
-    echo -e "\n${CYAN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
-    echo -e "${CYAN}$1${NC}"
-    echo -e "${CYAN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}\n"
-}
-
-cd "$(dirname "$0")/.." || exit 1
-
-print_header "STEP 09: ADD AI SECURITY PLUGINS"
-
-# Get Gemini API key from previous config or ask
-if [ -f "plugins/03-kong-with-ai-proxy.yaml" ]; then
-    GEMINI_KEY=$(grep "header_value:" plugins/03-kong-with-ai-proxy.yaml | head -1 | cut -d'"' -f2)
-else
-    echo -e "${YELLOW}Enter Gemini API Key (or press Enter to skip):${NC}"
-    read -p "Gemini API Key: " GEMINI_KEY
-    if [ -z "$GEMINI_KEY" ]; then
-        GEMINI_KEY="\$(GEMINI_API_KEY)"
-    fi
-fi
-
-# Create complete Kong configuration with all security
-cat > plugins/04-kong-complete.yaml << EOF
 _format_version: "3.0"
 _konnect:
   control_plane_name: Kong-Demo
@@ -104,7 +63,7 @@ services:
             name: gemini-2.5-flash
           auth:
             header_name: x-goog-api-key
-            header_value: "${GEMINI_KEY}"
+            header_value: "AIzaSyAR5tOATz7L-NfG2jTHuvw0WNyYwqxTwoA"
           logging:
             log_statistics: true
             log_payloads: false
@@ -301,40 +260,3 @@ plugins:
     config:
       allowed_payload_size: 10
       size_unit: megabytes
-EOF
-
-echo -e "${GREEN}✅ Complete configuration created: plugins/04-kong-complete.yaml${NC}\n"
-
-echo -e "${MAGENTA}Security Plugins Added:${NC}"
-echo -e "  ✅ AI Prompt Guard - Blocks malicious prompts"
-echo -e "     • Blocks jailbreak attempts"
-echo -e "     • Blocks prompt injection"
-echo -e "     • Blocks DAN (Do Anything Now) attacks"
-echo -e "  ✅ Response Transformer - Adds custom headers"
-echo -e "  ✅ Request Size Limiting - Max 10MB payloads"
-echo -e "  ✅ Correlation ID - Request tracking"
-
-# Load token from .env if available
-if [ -f ".env" ]; then
-    source ".env"
-elif [ -f "../.env" ]; then
-    source "../.env"
-fi
-
-echo -e "\n${YELLOW}To apply this configuration, run:${NC}"
-if [ -n "$DECK_KONNECT_TOKEN" ]; then
-    echo -e "${GREEN}deck gateway sync \\"
-    echo -e "  --konnect-control-plane-name='${DECK_KONNECT_CONTROL_PLANE_NAME}' \\"
-    echo -e "  --konnect-addr='${KONNECT_CONTROL_PLANE_URL}' \\"
-    echo -e "  --konnect-token='${DECK_KONNECT_TOKEN}' \\"
-    echo -e "  ../plugins/04-kong-complete.yaml${NC}"
-else
-    echo -e "${GREEN}deck gateway sync \\"
-    echo -e "  --konnect-control-plane-name='Kong-Demo' \\"
-    echo -e "  --konnect-addr='https://in.api.konghq.com' \\"
-    echo -e "  --konnect-token='YOUR_TOKEN' \\"
-    echo -e "  ../plugins/04-kong-complete.yaml${NC}"
-    echo -e "${YELLOW}Note: Add DECK_KONNECT_TOKEN to .env file to see actual token${NC}"
-fi
-
-echo -e "\n${BLUE}After applying, run: ${YELLOW}./10-test-security.sh${NC}"

@@ -1,0 +1,281 @@
+#!/bin/bash
+
+# ==============================================================================
+# Test Portal-Published API
+# ==============================================================================
+# This script tests the API published to Kong Dev Portal using Portal-generated
+# application credentials (API keys starting with 'kpat_').
+#
+# Prerequisites:
+# 1. Run 18-publish-to-portal.sh first
+# 2. Sign up for Dev Portal
+# 3. Create an application
+# 4. Register app with "Demo API"
+# 5. Copy the Portal-generated API key
+# ==============================================================================
+
+set -euo pipefail
+
+# Colors for output
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+BLUE='\033[0;34m'
+CYAN='\033[0;36m'
+YELLOW='\033[1;33m'
+NC='\033[0m' # No Color
+
+# Load environment variables
+source "$(dirname "$0")/load-env.sh"
+
+# Helper functions
+print_header() {
+  echo ""
+  echo -e "${BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+  echo -e "${BLUE}$1${NC}"
+  echo -e "${BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+}
+
+print_test() {
+  echo ""
+  echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+  echo "TEST: $1"
+  echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+}
+
+print_request() {
+  local method=$1
+  local url=$2
+  local headers=$3
+  local body=$4
+
+  echo ""
+  echo -e "${CYAN}📤 REQUEST:${NC}"
+  echo -e "  Method: ${GREEN}${method}${NC}"
+  echo -e "  URL: ${CYAN}${url}${NC}"
+  echo "  Headers:"
+  while IFS= read -r header; do
+    if [ -n "$header" ]; then
+      echo "    ${header}"
+    fi
+  done <<< "$headers"
+
+  if [ -n "$body" ]; then
+    echo "  Body:"
+    echo "$body" | jq '.' 2>/dev/null || echo "    $body"
+  fi
+
+  echo -e "${BLUE}📥 RESPONSE:${NC}"
+}
+
+# ==============================================================================
+# Check for Portal API Key
+# ==============================================================================
+print_header "Testing Portal-Published API"
+
+if [ -z "${PORTAL_API_KEY:-}" ]; then
+  echo ""
+  echo -e "${RED}❌ Error: PORTAL_API_KEY not set${NC}"
+  echo ""
+  echo -e "${YELLOW}To get your Portal API key:${NC}"
+  echo ""
+  echo "1. Visit your Kong Dev Portal"
+  echo "2. Sign up / Log in to the Portal"
+  echo "3. Navigate to 'My Apps' or 'Applications'"
+  echo "4. Create a new application (e.g., 'My Test App')"
+  echo "5. Register your app with 'Demo API'"
+  echo "6. Copy the generated API key (starts with 'kpat_')"
+  echo ""
+  echo -e "${YELLOW}Then add it to your .env file:${NC}"
+  echo "  echo 'PORTAL_API_KEY=kpat_your_key_here' >> .env"
+  echo ""
+  echo -e "${YELLOW}Or export it temporarily:${NC}"
+  echo "  export PORTAL_API_KEY='kpat_your_key_here'"
+  echo ""
+  exit 1
+fi
+
+# Validate key format
+if [[ ! "$PORTAL_API_KEY" =~ ^kpat_ ]]; then
+  echo ""
+  echo -e "${YELLOW}⚠️  Warning: Your API key doesn't start with 'kpat_'${NC}"
+  echo "   Portal-generated keys should start with 'kpat_' prefix"
+  echo "   You may be using a consumer key instead"
+  echo ""
+  read -p "Continue anyway? (y/N): " -n 1 -r
+  echo
+  if [[ ! $REPLY =~ ^[Yy]$ ]]; then
+    exit 1
+  fi
+fi
+
+echo ""
+echo -e "${GREEN}✅ Portal API Key found${NC}"
+echo -e "   Key prefix: ${PORTAL_API_KEY:0:10}..."
+echo ""
+
+# Gateway URL (uses KONNECT_PROXY_URL from .env)
+KONG_PROXY_URL="${KONNECT_PROXY_URL}"
+
+# ==============================================================================
+# Test 1: Health Check (No Auth Required)
+# ==============================================================================
+print_test "Health Check (No Auth)"
+
+URL="$KONG_PROXY_URL/api/demo/api/v1/health"
+HEADERS="Content-Type: application/json"
+
+print_request "GET" "$URL" "$HEADERS" ""
+
+curl -s -X GET "$URL" \
+  -H 'Content-Type: application/json' | jq '.'
+
+# ==============================================================================
+# Test 2: List Users (With Portal Key)
+# ==============================================================================
+print_test "List Users (With Portal Key)"
+
+URL="$KONG_PROXY_URL/api/demo/api/v1/users"
+HEADERS="apikey: ${PORTAL_API_KEY:0:15}..."$'\n'"Content-Type: application/json"
+
+print_request "GET" "$URL" "$HEADERS" ""
+
+curl -s -X GET "$URL" \
+  -H "apikey: $PORTAL_API_KEY" \
+  -H 'Content-Type: application/json' | jq '.'
+
+# ==============================================================================
+# Test 3: Get Specific User (With Portal Key)
+# ==============================================================================
+print_test "Get User by ID (With Portal Key)"
+
+URL="$KONG_PROXY_URL/api/demo/api/v1/users/1"
+HEADERS="apikey: ${PORTAL_API_KEY:0:15}..."$'\n'"Content-Type: application/json"
+
+print_request "GET" "$URL" "$HEADERS" ""
+
+curl -s -X GET "$URL" \
+  -H "apikey: $PORTAL_API_KEY" \
+  -H 'Content-Type: application/json' | jq '.'
+
+# ==============================================================================
+# Test 4: List Products (With Portal Key)
+# ==============================================================================
+print_test "List Products (With Portal Key)"
+
+URL="$KONG_PROXY_URL/api/demo/api/v1/products"
+HEADERS="apikey: ${PORTAL_API_KEY:0:15}..."$'\n'"Content-Type: application/json"
+
+print_request "GET" "$URL" "$HEADERS" ""
+
+curl -s -X GET "$URL" \
+  -H "apikey: $PORTAL_API_KEY" \
+  -H 'Content-Type: application/json' | jq '.'
+
+# ==============================================================================
+# Test 5: Get API Stats (With Portal Key)
+# ==============================================================================
+print_test "Get API Statistics (With Portal Key)"
+
+URL="$KONG_PROXY_URL/api/demo/api/v1/stats"
+HEADERS="apikey: ${PORTAL_API_KEY:0:15}..."$'\n'"Content-Type: application/json"
+
+print_request "GET" "$URL" "$HEADERS" ""
+
+curl -s -X GET "$URL" \
+  -H "apikey: $PORTAL_API_KEY" \
+  -H 'Content-Type: application/json' | jq '.'
+
+# ==============================================================================
+# Test 6: Missing API Key (Should Fail)
+# ==============================================================================
+print_test "Request Without API Key (Should Fail with 401)"
+
+URL="$KONG_PROXY_URL/api/demo/api/v1/users"
+HEADERS="Content-Type: application/json"
+
+print_request "GET" "$URL" "$HEADERS" ""
+
+echo -e "${YELLOW}Expected: 401 Unauthorized${NC}"
+curl -s -w "\nHTTP Status: %{http_code}\n" -X GET "$URL" \
+  -H 'Content-Type: application/json' | jq '.' || echo ""
+
+# ==============================================================================
+# Test 7: Invalid API Key (Should Fail)
+# ==============================================================================
+print_test "Request With Invalid API Key (Should Fail with 401)"
+
+URL="$KONG_PROXY_URL/api/demo/api/v1/users"
+HEADERS="apikey: invalid-key-12345"$'\n'"Content-Type: application/json"
+
+print_request "GET" "$URL" "$HEADERS" ""
+
+echo -e "${YELLOW}Expected: 401 Unauthorized${NC}"
+curl -s -w "\nHTTP Status: %{http_code}\n" -X GET "$URL" \
+  -H "apikey: invalid-key-12345" \
+  -H 'Content-Type: application/json' | jq '.' || echo ""
+
+# ==============================================================================
+# Test 8: Create New User (POST with Portal Key)
+# ==============================================================================
+print_test "Create New User (POST with Portal Key)"
+
+URL="$KONG_PROXY_URL/api/demo/api/v1/users"
+HEADERS="apikey: ${PORTAL_API_KEY:0:15}..."$'\n'"Content-Type: application/json"
+BODY='{
+  "name": "Portal Test User",
+  "email": "portaltest@example.com"
+}'
+
+print_request "POST" "$URL" "$HEADERS" "$BODY"
+
+curl -s -X POST "$URL" \
+  -H "apikey: $PORTAL_API_KEY" \
+  -H 'Content-Type: application/json' \
+  -d "$BODY" | jq '.'
+
+# ==============================================================================
+# Test 9: Verify Response Headers
+# ==============================================================================
+print_test "Verify Kong Headers in Response"
+
+URL="$KONG_PROXY_URL/api/demo/api/v1/users"
+HEADERS="apikey: ${PORTAL_API_KEY:0:15}..."$'\n'"Content-Type: application/json"
+
+print_request "GET" "$URL" "$HEADERS" ""
+
+echo -e "${CYAN}Response Headers:${NC}"
+curl -s -I -X GET "$URL" \
+  -H "apikey: $PORTAL_API_KEY" \
+  -H 'Content-Type: application/json' | grep -i "x-kong\|server\|via"
+
+# ==============================================================================
+# Summary
+# ==============================================================================
+print_header "Test Summary"
+
+echo ""
+echo -e "${GREEN}✅ All Portal API tests completed!${NC}"
+echo ""
+echo -e "${BLUE}📊 Tests Executed:${NC}"
+echo "  1. ✅ Health check (no auth)"
+echo "  2. ✅ List users (with portal key)"
+echo "  3. ✅ Get user by ID (with portal key)"
+echo "  4. ✅ List products (with portal key)"
+echo "  5. ✅ Get API stats (with portal key)"
+echo "  6. ✅ Missing API key (401 expected)"
+echo "  7. ✅ Invalid API key (401 expected)"
+echo "  8. ✅ Create new user (POST with portal key)"
+echo "  9. ✅ Verify Kong headers"
+echo ""
+echo -e "${YELLOW}📝 Notes:${NC}"
+echo "  • All authenticated requests used Portal-generated key"
+echo "  • Portal keys start with 'kpat_' prefix"
+echo "  • Consumer keys won't work with Portal apps"
+echo "  • Key authentication is enforced by key-auth plugin"
+echo ""
+echo -e "${YELLOW}🔍 Next Steps:${NC}"
+echo "  1. Check API analytics in Kong Konnect"
+echo "  2. View usage in Dev Portal (My Apps → Analytics)"
+echo "  3. Test rate limiting (if configured)"
+echo "  4. Review API logs in Kong Gateway"
+echo ""

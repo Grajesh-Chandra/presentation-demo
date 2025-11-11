@@ -11,7 +11,7 @@ This directory contains 17 sequential scripts plus utilities for complete lifecy
 - **workflow.sh** - 📖 Show complete workflow overview
 - **load-env.sh** - Load environment variables
 
-**Core Workflow Scripts (01-17):**
+**Core Workflow Scripts (01-19):**
 1. **01-install-services.sh** - Deploy services to Kubernetes
 2. **02-test-without-kong.sh** - Test APIs without Kong
 3. **03-configure-kong-basic.sh** - Generate basic Kong config
@@ -29,6 +29,8 @@ This directory contains 17 sequential scripts plus utilities for complete lifecy
 15. **15-test-semantic-guard.sh** - Test semantic guard (Enterprise)
 16. **16-test-redis-connection.sh** - Test Redis connectivity
 17. **17-add-semantic-cache.sh** - Add semantic cache (Enterprise)
+18. **18-publish-to-portal.sh** - 🆕 Publish API to Kong Dev Portal
+19. **19-test-portal-api.sh** - 🆕 Test Portal-published API
 
 ## 🚀 Quick Start
 
@@ -110,6 +112,16 @@ This directory contains 17 sequential scripts plus utilities for complete lifecy
 ./15-test-semantic-guard.sh        # ❌ Not available
 ./16-test-redis-connection.sh      # Helper tool
 ./17-add-semantic-cache.sh         # ❌ Not available
+```
+
+**Phase 8: Kong Dev Portal (18-19) 🆕**
+```bash
+# Publish API to Dev Portal
+./18-publish-to-portal.sh
+
+# After getting Portal API key, test the published API
+export PORTAL_API_KEY='kpat_your_key_from_portal'
+./19-test-portal-api.sh
 ```
 
 ## 📝 Script Details
@@ -262,6 +274,60 @@ This directory contains 17 sequential scripts plus utilities for complete lifecy
 - **Output**: `../plugins/05-kong-with-semantic-cache.yaml`
 - **Error**: "unknown field" validation error
 
+### 18-publish-to-portal.sh 🆕
+- **Purpose**: Publish Demo API to Kong Dev Portal
+- **Actions**:
+  - Registers API in Konnect catalog
+  - Creates and uploads OpenAPI specification
+  - Links API to Gateway Service (demo-api-service)
+  - Publishes API to Dev Portal
+  - Applies key-auth authentication strategy
+- **Output**:
+  - API published to Dev Portal
+  - API ID saved to `/tmp/portal-api-id.txt`
+  - OpenAPI spec created at `/tmp/demo-api-openapi.yaml`
+- **Prerequisites**:
+  - Kong Konnect account with Dev Portal enabled
+  - KONNECT_TOKEN in .env file
+  - Demo API deployed and configured
+- **Next Steps**:
+  1. Visit Dev Portal
+  2. Sign up as developer
+  3. Create application
+  4. Register app with "Demo API"
+  5. Copy Portal-generated API key
+  6. Run `19-test-portal-api.sh`
+
+### 19-test-portal-api.sh 🆕
+- **Purpose**: Test API published to Dev Portal using Portal-generated credentials
+- **Tests**:
+  1. Health check (no auth)
+  2. List users (with Portal key)
+  3. Get user by ID (with Portal key)
+  4. List products (with Portal key)
+  5. Get API stats (with Portal key)
+  6. Missing API key (401 expected)
+  7. Invalid API key (401 expected)
+  8. Create new user POST (with Portal key)
+  9. Verify Kong headers
+- **Prerequisites**:
+  - Script 18 completed (API published)
+  - Dev Portal application created
+  - PORTAL_API_KEY environment variable set
+- **Key Validation**: Checks that key starts with `kpat_` prefix
+- **Usage**:
+  ```bash
+  # Set your Portal API key first
+  export PORTAL_API_KEY='kpat_your_key_from_portal'
+
+  # Or add to .env file
+  echo 'PORTAL_API_KEY=kpat_your_key_here' >> .env
+
+  # Run tests
+  ./19-test-portal-api.sh
+  ```
+- **Important**: Portal keys (kpat_*) are different from consumer keys
+
 ## 🔑 API Keys
 
 **Consumers created:**
@@ -378,6 +444,6 @@ After completing all scripts:
 4. Configure additional AI providers
 5. Implement custom plugins
 
----
+
 
 **Happy Building! 🚀**

@@ -62,12 +62,30 @@ EOF
 echo -e "${BLUE}Configuration created: plugins/01-kong-basic.yaml${NC}\n"
 cat plugins/01-kong-basic.yaml
 
+# Load token from .env if available
+if [ -f ".env" ]; then
+    source ".env"
+    echo -e "${GREEN}✅ Loaded environment from .env${NC}"
+elif [ -f "../.env" ]; then
+    source "../.env"
+    echo -e "${GREEN}✅ Loaded environment from ../.env${NC}"
+fi
+
 echo -e "\n${YELLOW}To apply this configuration, run:${NC}"
-echo -e "${GREEN}deck gateway sync \\"
-echo -e "  --konnect-control-plane-name='Kong-Demo' \\"
-echo -e "  --konnect-addr='https://in.api.konghq.com' \\"
-echo -e "  --konnect-token='YOUR_TOKEN' \\"
-echo -e "  ../plugins/01-kong-basic.yaml${NC}"
+if [ -n "$DECK_KONNECT_TOKEN" ]; then
+    echo -e "${GREEN}deck gateway sync \\"
+    echo -e "  --konnect-control-plane-name='${DECK_KONNECT_CONTROL_PLANE_NAME}' \\"
+    echo -e "  --konnect-addr='${KONNECT_CONTROL_PLANE_URL}' \\"
+    echo -e "  --konnect-token='${DECK_KONNECT_TOKEN}' \\"
+    echo -e "  ../plugins/01-kong-basic.yaml${NC}"
+else
+    echo -e "${GREEN}deck gateway sync \\"
+    echo -e "  --konnect-control-plane-name='Kong-Demo' \\"
+    echo -e "  --konnect-addr='https://in.api.konghq.com' \\"
+    echo -e "  --konnect-token='YOUR_TOKEN' \\"
+    echo -e "  ../plugins/01-kong-basic.yaml${NC}"
+    echo -e "${YELLOW}Note: Add DECK_KONNECT_TOKEN to .env file to see actual token${NC}"
+fi
 
 echo -e "\n${YELLOW}Or apply via Konnect UI:${NC}"
 echo -e "  1. Go to Gateway Manager > Services"

@@ -120,12 +120,28 @@ EOF
 
 echo -e "${BLUE}Configuration created: plugins/02-kong-with-auth.yaml${NC}\n"
 
+# Load token from .env if available
+if [ -f ".env" ]; then
+    source ".env"
+elif [ -f "../.env" ]; then
+    source "../.env"
+fi
+
 echo -e "\n${YELLOW}To apply this configuration, run:${NC}"
-echo -e "${GREEN}deck gateway sync \\"
-echo -e "  --konnect-control-plane-name='Kong-Demo' \\"
-echo -e "  --konnect-addr='https://in.api.konghq.com' \\"
-echo -e "  --konnect-token='YOUR_TOKEN' \\"
-echo -e "  ../plugins/02-kong-with-auth.yaml${NC}"
+if [ -n "$DECK_KONNECT_TOKEN" ]; then
+    echo -e "${GREEN}deck gateway sync \\"
+    echo -e "  --konnect-control-plane-name='${DECK_KONNECT_CONTROL_PLANE_NAME}' \\"
+    echo -e "  --konnect-addr='${KONNECT_CONTROL_PLANE_URL}' \\"
+    echo -e "  --konnect-token='${DECK_KONNECT_TOKEN}' \\"
+    echo -e "  ../plugins/02-kong-with-auth.yaml${NC}"
+else
+    echo -e "${GREEN}deck gateway sync \\"
+    echo -e "  --konnect-control-plane-name='Kong-Demo' \\"
+    echo -e "  --konnect-addr='https://in.api.konghq.com' \\"
+    echo -e "  --konnect-token='YOUR_TOKEN' \\"
+    echo -e "  ../plugins/02-kong-with-auth.yaml${NC}"
+    echo -e "${YELLOW}Note: Add DECK_KONNECT_TOKEN to .env file to see actual token${NC}"
+fi
 
 echo -e "\n${BLUE}Configuration Summary:${NC}"
 echo -e "  ✅ Key Authentication enabled for both services"

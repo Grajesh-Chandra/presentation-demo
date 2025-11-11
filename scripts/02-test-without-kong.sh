@@ -36,10 +36,34 @@ print_header() {
 }
 
 print_test() {
-    echo -e "\n${YELLOW}TEST: $1${NC}"
-    if [ ! -z "$2" ]; then
-        echo -e "${CYAN}Endpoint: $2${NC}"
+    echo -e "\n${YELLOW}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+    echo -e "${YELLOW}TEST: $1${NC}"
+    echo -e "${YELLOW}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+}
+
+print_request() {
+    local method=$1
+    local url=$2
+    local headers=$3
+    local body=$4
+
+    echo -e "\n${BLUE}📤 REQUEST:${NC}"
+    echo -e "  Method: ${GREEN}${method}${NC}"
+    echo -e "  URL: ${CYAN}${url}${NC}"
+
+    if [ ! -z "$headers" ]; then
+        echo -e "  Headers:"
+        echo "$headers" | while IFS= read -r header; do
+            [ ! -z "$header" ] && echo -e "    ${header}"
+        done
     fi
+
+    if [ ! -z "$body" ]; then
+        echo -e "  Body:"
+        echo "$body" | jq '.' 2>/dev/null || echo "    $body"
+    fi
+
+    echo -e "\n${BLUE}📥 RESPONSE:${NC}"
 }
 
 print_header "STEP 02: TEST APIS WITHOUT KONG"
@@ -47,36 +71,46 @@ print_header "STEP 02: TEST APIS WITHOUT KONG"
 # Demo API Tests
 print_header "DEMO API TESTS ($DEMO_API_URL)"
 
-print_test "1. Health Check" "$DEMO_API_URL/health"
+print_test "1. Health Check"
+print_request "GET" "$DEMO_API_URL/health"
 curl -s $DEMO_API_URL/health | jq '.'
 
-print_test "2. Get Users" "$DEMO_API_URL/api/v1/users"
+print_test "2. Get Users"
+print_request "GET" "$DEMO_API_URL/api/v1/users"
 curl -s $DEMO_API_URL/api/v1/users | jq '.'
 
-print_test "3. Get User by ID" "$DEMO_API_URL/api/v1/users/1"
+print_test "3. Get User by ID"
+print_request "GET" "$DEMO_API_URL/api/v1/users/1"
 curl -s $DEMO_API_URL/api/v1/users/1 | jq '.'
 
-print_test "4. Get Products" "$DEMO_API_URL/api/v1/products"
+print_test "4. Get Products"
+print_request "GET" "$DEMO_API_URL/api/v1/products"
 curl -s $DEMO_API_URL/api/v1/products | jq '.'
 
-print_test "5. Get Statistics" "$DEMO_API_URL/api/v1/stats"
+print_test "5. Get Statistics"
+print_request "GET" "$DEMO_API_URL/api/v1/stats"
 curl -s $DEMO_API_URL/api/v1/stats | jq '.'
 
 # AI Router Tests
 print_header "AI ROUTER TESTS ($AI_ROUTER_URL)"
 
-print_test "6. Health Check" "$AI_ROUTER_URL/health"
+print_test "6. Health Check"
+print_request "GET" "$AI_ROUTER_URL/health"
 curl -s $AI_ROUTER_URL/health | jq '.'
 
-print_test "7. List Models" "$AI_ROUTER_URL/models"
+print_test "7. List Models"
+print_request "GET" "$AI_ROUTER_URL/models"
 curl -s $AI_ROUTER_URL/models | jq '.'
 
-print_test "8. Chat with Mock Provider" "POST $AI_ROUTER_URL/chat"
+print_test "8. Chat with Mock Provider"
+BODY='{"message":"Hello","provider":"openai","model":"gpt-4"}'
+print_request "POST" "$AI_ROUTER_URL/chat" "Content-Type: application/json" "$BODY"
 curl -s -X POST $AI_ROUTER_URL/chat \
   -H 'Content-Type: application/json' \
-  -d '{"message":"Hello","provider":"openai","model":"gpt-4"}' | jq '.'
+  -d "$BODY" | jq '.'
 
-print_test "9. Get Statistics" "$AI_ROUTER_URL/stats"
+print_test "9. Get Statistics"
+print_request "GET" "$AI_ROUTER_URL/stats"
 curl -s $AI_ROUTER_URL/stats | jq '.'
 
 echo -e "\n${GREEN}✅ All direct API tests completed!${NC}"

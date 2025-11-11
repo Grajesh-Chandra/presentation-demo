@@ -38,10 +38,28 @@ print_header() {
 }
 
 print_test() {
-    echo -e "\n${YELLOW}TEST: $1${NC}"
-    if [ ! -z "$2" ]; then
-        echo -e "${CYAN}Endpoint: $2${NC}"
+    echo -e "\n${YELLOW}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+    echo -e "${YELLOW}TEST: $1${NC}"
+    echo -e "${YELLOW}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+}
+
+print_request() {
+    local method=$1
+    local url=$2
+    local headers=$3
+
+    echo -e "\n${BLUE}📤 REQUEST:${NC}"
+    echo -e "  Method: ${GREEN}${method}${NC}"
+    echo -e "  URL: ${CYAN}${url}${NC}"
+
+    if [ ! -z "$headers" ]; then
+        echo -e "  Headers:"
+        echo "$headers" | while IFS= read -r header; do
+            [ ! -z "$header" ] && echo -e "    ${header}"
+        done
     fi
+
+    echo -e "\n${BLUE}📥 RESPONSE:${NC}"
 }
 
 print_header "STEP 15: TEST REDIS-BACKED RATE LIMITING"

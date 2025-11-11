@@ -150,8 +150,10 @@ presentation-demo/
 │   ├── 13-test-redis-rate-limits.sh # Test Redis integration
 │   ├── 14-add-semantic-prompt-guard.sh # Vector security (Enterprise)
 │   ├── 15-test-semantic-guard.sh  # Test semantic guard (Enterprise)
-│   ├── 16-test-redis-connection.sh # Test Redis
-│   ├── 17-add-semantic-cache.sh   # Semantic cache (Enterprise)
+│   ├── 16-test-redis-connection.sh # Test Redis connectivity
+│   ├── 17-add-semantic-cache.sh   # Add semantic cache (Enterprise)
+│   ├── 18-publish-to-portal.sh    # 🆕 Publish API to Dev Portal
+│   ├── 19-test-portal-api.sh      # 🆕 Test Portal-published API
 │   ├── cleanup.sh                 # 🧹 Clean everything
 │   ├── workflow.sh                # 📖 Workflow overview
 │   ├── load-env.sh                # Load environment variables
@@ -184,7 +186,14 @@ presentation-demo/
 ├── docs/                           # 📚 Documentation
 │   ├── k8s_demo_api_deployment.md     # Deploy Node.js API guide
 │   ├── k8s_ai_service_deployment.md   # Deploy AI Router guide
-│   └── kong_dev_portal_guide.md       # Kong Dev Portal complete guide
+│   ├── kong_dev_portal_guide.md       # Kong Dev Portal complete guide
+│   ├── portal_workflow.md             # Portal setup workflow guide
+│   └── portal/                        # 🎨 Portal Page Templates
+│       ├── README.md                  # Start here - Overview & quick start
+│       ├── portal-guide.md            # Complete page templates (copy-paste ready)
+│       ├── customization.md           # Build custom pages with components
+│       └── snippets.md                # Component reference library
+│
 │
 ├── .env.example                    # Environment variables template
 ├── .gitignore                      # Git ignore patterns

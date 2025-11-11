@@ -37,10 +37,34 @@ print_header() {
 }
 
 print_test() {
-    echo -e "\n${YELLOW}TEST: $1${NC}"
-    if [ ! -z "$2" ]; then
-        echo -e "${CYAN}Endpoint: $2${NC}"
+    echo -e "\n${YELLOW}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+    echo -e "${YELLOW}TEST: $1${NC}"
+    echo -e "${YELLOW}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+}
+
+print_request() {
+    local method=$1
+    local url=$2
+    local headers=$3
+    local body=$4
+
+    echo -e "\n${BLUE}📤 REQUEST:${NC}"
+    echo -e "  Method: ${GREEN}${method}${NC}"
+    echo -e "  URL: ${CYAN}${url}${NC}"
+
+    if [ ! -z "$headers" ]; then
+        echo -e "  Headers:"
+        echo "$headers" | while IFS= read -r header; do
+            [ ! -z "$header" ] && echo -e "    ${header}"
+        done
     fi
+
+    if [ ! -z "$body" ]; then
+        echo -e "  Body:"
+        echo "$body" | jq '.' 2>/dev/null || echo "    $body"
+    fi
+
+    echo -e "\n${BLUE}📥 RESPONSE:${NC}"
 }
 
 print_header "STEP 08: TEST AI SERVICES"
@@ -48,62 +72,51 @@ print_header "STEP 08: TEST AI SERVICES"
 # Test 1: Custom AI Router (Flask App)
 print_header "CUSTOM AI ROUTER TESTS"
 
-print_test "1. List Available Models" "$KONG_PROXY_URL/ai/custom/models"
+print_test "1. List Available Models"
+print_request "GET" "$KONG_PROXY_URL/ai/custom/models" "apikey: $DEMO_API_KEY"
 curl -s -H "apikey: $DEMO_API_KEY" \
   $KONG_PROXY_URL/ai/custom/models | jq '.'
 
-print_test "2. Chat with Ollama via Custom Router" "POST $KONG_PROXY_URL/ai/custom/chat"
+print_test "2. Chat with Ollama via Custom Router"
+BODY='{"message":"Say hello in one sentence","provider":"ollama","model":"mistral"}'
+HEADERS="apikey: $DEMO_API_KEY"$'\n'"Content-Type: application/json"
+print_request "POST" "$KONG_PROXY_URL/ai/custom/chat" "$HEADERS" "$BODY"
 curl -s -H "apikey: $DEMO_API_KEY" \
   -X POST $KONG_PROXY_URL/ai/custom/chat \
   -H 'Content-Type: application/json' \
-  -d '{
-    "message": "Say hello in one sentence",
-    "provider": "ollama",
-    "model": "mistral"
-  }' | jq '.'
+  -d "$BODY" | jq '.'
 
-print_test "3. Chat with Mock Provider" "POST $KONG_PROXY_URL/ai/custom/chat"
+print_test "3. Chat with Mock Provider"
+BODY='{"message":"What is AI?","provider":"openai","model":"gpt-4"}'
+print_request "POST" "$KONG_PROXY_URL/ai/custom/chat" "$HEADERS" "$BODY"
 curl -s -H "apikey: $DEMO_API_KEY" \
   -X POST $KONG_PROXY_URL/ai/custom/chat \
   -H 'Content-Type: application/json' \
-  -d '{
-    "message": "What is AI?",
-    "provider": "openai",
-    "model": "gpt-4"
-  }' | jq '.'
+  -d "$BODY" | jq '.'
 
 # Test 2: Kong Native AI - Ollama
 print_header "KONG NATIVE AI - OLLAMA TESTS"
 
-print_test "4. Kong AI Proxy - Ollama/Mistral Chat" "POST $KONG_PROXY_URL/ai/kong/ollama/chat"
+print_test "4. Kong AI Proxy - Ollama/Mistral Chat"
+BODY='{"messages":[{"role":"user","content":"Say hello in one sentence"}]}'
+HEADERS="apikey: $DEMO_API_KEY"$'\n'"Content-Type: application/json"
+print_request "POST" "$KONG_PROXY_URL/ai/kong/ollama/chat" "$HEADERS" "$BODY"
 curl -s -H "apikey: $DEMO_API_KEY" \
   -X POST $KONG_PROXY_URL/ai/kong/ollama/chat \
   -H 'Content-Type: application/json' \
-  -d '{
-    "messages": [
-      {
-        "role": "user",
-        "content": "Say hello in one sentence"
-      }
-    ]
-  }' | jq '.'
+  -d "$BODY" | jq '.'
 
 # Test 3: Kong Native AI - Gemini
 print_header "KONG NATIVE AI - GEMINI TESTS"
 
-print_test "5. Kong AI Proxy - Gemini Chat" "POST $KONG_PROXY_URL/ai/kong/gemini/chat"
+print_test "5. Kong AI Proxy - Gemini Chat"
 echo -e "${BLUE}Testing Gemini (gemini-2.5-flash)...${NC}"
+BODY='{"messages":[{"role":"user","content":"Say hello in one sentence"}]}'
+print_request "POST" "$KONG_PROXY_URL/ai/kong/gemini/chat" "$HEADERS" "$BODY"
 GEMINI_RESPONSE=$(curl -s -H "apikey: $DEMO_API_KEY" \
   -X POST $KONG_PROXY_URL/ai/kong/gemini/chat \
   -H 'Content-Type: application/json' \
-  -d '{
-    "messages": [
-      {
-        "role": "user",
-        "content": "Say hello in one sentence"
-      }
-    ]
-  }')
+  -d "$BODY")
 
 echo "$GEMINI_RESPONSE" | jq '.'
 
@@ -116,16 +129,19 @@ fi
 # Test 4: Health Check (No Auth Required)
 print_header "PUBLIC ENDPOINTS"
 
-print_test "6. Health Check (No auth required)" "$KONG_PROXY_URL/ai/health"
+print_test "6. Health Check (No auth required)"
+print_request "GET" "$KONG_PROXY_URL/ai/health"
 curl -s $KONG_PROXY_URL/ai/health | jq '.'
 
 # Test 5: Authentication Check
 print_header "AUTHENTICATION VERIFICATION"
 
-print_test "7. AI endpoint without API key (should fail)" "POST $KONG_PROXY_URL/ai/kong/ollama/chat"
+print_test "7. AI endpoint without API key (should fail)"
+BODY='{"messages":[{"role":"user","content":"test"}]}'
+print_request "POST" "$KONG_PROXY_URL/ai/kong/ollama/chat" "Content-Type: application/json" "$BODY"
 curl -s -X POST $KONG_PROXY_URL/ai/kong/ollama/chat \
   -H 'Content-Type: application/json' \
-  -d '{"messages":[{"role":"user","content":"test"}]}' | jq '.'
+  -d "$BODY" | jq '.'
 
 # Test 6: Compare Both Approaches
 print_header "COMPARISON: KONG NATIVE vs CUSTOM ROUTER"

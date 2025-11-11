@@ -4,7 +4,6 @@
 # 14 - Add Redis-Based Plugins (Available in Konnect)
 # ==============================================================================
 # Adds Redis-powered plugins that are currently supported in Kong Konnect
-# Note: ai-semantic-cache is NOT yet available, so we focus on other enhancements
 # ==============================================================================
 
 # Colors
@@ -381,13 +380,28 @@ echo -e "\n${CYAN}━━━━━━━━━━━━━━━━━━━━�
 echo -e "${CYAN}Next Step: Apply Configuration to Konnect${NC}"
 echo -e "${CYAN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}\n"
 
+# Load token from .env if not already loaded
+if [ -z "$DECK_KONNECT_TOKEN" ]; then
+    source "$PROJECT_ROOT/.env"
+fi
+
 echo -e "${BLUE}Run the following command:${NC}\n"
-echo -e "  ${GREEN}cd $PROJECT_ROOT${NC}"
-echo -e "  ${GREEN}source .env && deck gateway sync \\${NC}"
-echo -e "  ${GREEN}  --konnect-control-plane-name=\"\$DECK_KONNECT_CONTROL_PLANE_NAME\" \\${NC}"
-echo -e "  ${GREEN}  --konnect-addr=\"\$KONNECT_CONTROL_PLANE_URL\" \\${NC}"
-echo -e "  ${GREEN}  --konnect-token=\"\$DECK_KONNECT_TOKEN\" \\${NC}"
-echo -e "  ${GREEN}  plugins/07-kong-with-redis-plugins.yaml${NC}\n"
+if [ -n "$DECK_KONNECT_TOKEN" ]; then
+    echo -e "  ${GREEN}cd $PROJECT_ROOT${NC}"
+    echo -e "  ${GREEN}source .env && deck gateway sync \\${NC}"
+    echo -e "  ${GREEN}  --konnect-control-plane-name='$DECK_KONNECT_CONTROL_PLANE_NAME' \\${NC}"
+    echo -e "  ${GREEN}  --konnect-addr='$KONNECT_CONTROL_PLANE_URL' \\${NC}"
+    echo -e "  ${GREEN}  --konnect-token='$DECK_KONNECT_TOKEN' \\${NC}"
+    echo -e "  ${GREEN}  plugins/07-kong-with-redis-plugins.yaml${NC}\n"
+else
+    echo -e "  ${GREEN}cd $PROJECT_ROOT${NC}"
+    echo -e "  ${GREEN}source .env && deck gateway sync \\${NC}"
+    echo -e "  ${GREEN}  --konnect-control-plane-name=\"\$DECK_KONNECT_CONTROL_PLANE_NAME\" \\${NC}"
+    echo -e "  ${GREEN}  --konnect-addr=\"\$KONNECT_CONTROL_PLANE_URL\" \\${NC}"
+    echo -e "  ${GREEN}  --konnect-token=\"\$DECK_KONNECT_TOKEN\" \\${NC}"
+    echo -e "  ${GREEN}  plugins/07-kong-with-redis-plugins.yaml${NC}\n"
+    echo -e "${YELLOW}Note: Add DECK_KONNECT_TOKEN to .env file to see actual token${NC}\n"
+fi
 
 echo -e "${YELLOW}Or test rate limits with Redis:${NC}"
 echo -e "  ${CYAN}cd scripts && ./15-test-redis-rate-limits.sh${NC}\n"
